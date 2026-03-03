@@ -4,8 +4,8 @@ import QRCode from "qrcode";
 
 const buildQRData = (client) => {
   const baseUrl =
-    import.meta.env.VITE_BASE_URL || "https://es.hafrchamber.org.sa";
-  const verifyUrl = `${baseUrl}/api/user/verify/${client?.refNumber}`;
+    import.meta.env.VITE_BASE_URL || "https://es.hafrchamber.org.sa  ";
+  const verifyUrl = `${baseUrl}/verify/${client?.refNumber}`;
   return [
     `اسم المنشأة: ${client.name}`,
     `الرقم الموحد: ${client.unifiedNumber || ""}`,
@@ -18,8 +18,8 @@ const buildQRData = (client) => {
 
 const getVerifyUrl = (client) => {
   const baseUrl =
-    import.meta.env.VITE_BASE_URL || "https://es.hafrchamber.org.sa";
-  return `${baseUrl}/api/user/verify/${client?.refNumber}`;
+    import.meta.env.VITE_BASE_URL || "https://es.hafrchamber.org.sa  ";
+  return `${baseUrl}/verify/${client?.refNumber}`;
 };
 
 const fmtHijriDate = (d) => {
@@ -51,13 +51,61 @@ const fmtValidDate = (d) => {
   return `${dd}-${mm}-${yyyy}`;
 };
 
+// دالة جديدة لإنشاء QR مع لوجو في المنتصف
+const generateQRWithLogo = async (client) => {
+  const size = 200;
+  const logoSize = 15;
+
+  // إنشاء كانفاس للـ QR
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+
+  // إنشاء QR على كانفاس مؤقت
+  const qrCanvas = document.createElement("canvas");
+  await QRCode.toCanvas(qrCanvas, buildQRData(client), {
+    width: size,
+    margin: 2,
+    color: {
+      dark: "#000000",
+      light: "#ffffff",
+    },
+  });
+
+  // رسم الـ QR على الكانفاس الرئيسي
+  ctx.drawImage(qrCanvas, 0, 0, size, size);
+
+  // إنشاء دائرة بيضاء خلف اللوجو
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, logoSize / 2 + 5, 0, 2 * Math.PI);
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+
+  // تحميل وإضافة اللوجو
+  const logo = new Image();
+  logo.crossOrigin = "anonymous";
+
+  return new Promise((resolve, reject) => {
+    logo.onload = () => {
+      const x = (size - logoSize) / 2;
+      const y = (size - logoSize) / 2;
+      ctx.drawImage(logo, x, y, logoSize, logoSize);
+      resolve(canvas.toDataURL("image/png"));
+    };
+    logo.onerror = () => {
+      // في حالة فشل تحميل اللوجو، نرجع QR عادي
+      resolve(qrCanvas.toDataURL("image/png"));
+    };
+    logo.src = "/src/imgs/Footer logo.jpeg";
+  });
+};
+
 export const generateClientPDF = async (client) => {
   const verifyUrl = getVerifyUrl(client);
 
-  const qrDataURL = await QRCode.toDataURL(buildQRData(client), {
-    width: 120,
-    margin: 1,
-  });
+  // استخدام الدالة الجديدة لإنشاء QR مع اللوجو
+  const qrDataURL = await generateQRWithLogo(client);
 
   const greDate = fmtGregorianDate(client.date);
   const hijDate = fmtHijriDate(client.date);
@@ -75,11 +123,21 @@ export const generateClientPDF = async (client) => {
   flex-direction: column;
   overflow: hidden;
 ">
-
-  <!-- Header Image -->
-  <div style="flex-shrink: 0; margin-bottom: 20px; z-index: 4;">
-    <img src="/src/imgs/Header.jpg" width="794" style="display:block;" />
-  </div>
+<!-- Header Image -->
+<div style="
+  flex-shrink: 0; 
+  margin-top: -25px; 
+  z-index: 4; 
+  width: 100%;
+  display: block;
+  overflow: visible;
+">
+  <img 
+    src="/src/imgs/Header.jpg" 
+    width="794" 
+    style="display: block;" 
+  />
+</div>
 
   <!-- Info Row -->
   <div style="
@@ -92,8 +150,8 @@ export const generateClientPDF = async (client) => {
     line-height: 1.7;
     box-sizing: border-box;
   ">
-    <!-- Arabic -->
-    <div dir="rtl" style="text-align: right; word-break: break-word; flex: 1;">
+    <!-- Arabic - 25% -->
+    <div dir="rtl" style="text-align: right; word-break: break-word; flex: 0 0 25%;">
       <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">مؤسسة ${client.name || "—"}</div>
       <div>الرقم الموحد (700) : ${client.unifiedNumber || "—"}</div>
       <div>السجل التجاري : ${client.crNumber || "—"}</div>
@@ -102,8 +160,8 @@ export const generateClientPDF = async (client) => {
       <div>الرقم المرجعي : ${client.refNumber || client.requestNumber || "—"}</div>
     </div>
 
-    <!-- QR -->
-    <div style="flex: 1.2; text-align: center; padding: 0 8px; box-sizing: border-box;">
+    <!-- QR - 50% -->
+    <div style="flex: 0 0 50%; text-align: center; padding: 0 8px; box-sizing: border-box;">
       <img src="${qrDataURL}" width="95" height="95" style="display:block;margin:0 auto;" />
       <div style="font-size: 10px; margin-top: 4px;">${verifyUrl}</div>
       <div dir="rtl" style="font-size: 8.5px; margin-top: 6px; text-align: justify;">
@@ -114,8 +172,8 @@ export const generateClientPDF = async (client) => {
       </div>
     </div>
 
-    <!-- English -->
-    <div dir="ltr" style="text-align: left; word-break: break-word; flex: 1;">
+    <!-- English - 25% -->
+    <div dir="ltr" style="text-align: left; word-break: break-word; flex: 0 0 25%;">
       <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">Establishment ${client.name || "—"}</div>
       <div>Unified Number : ${client.unifiedNumber || "—"}</div>
       <div>CR Number : ${client.crNumber || "—"}</div>
@@ -180,7 +238,9 @@ export const generateClientPDF = async (client) => {
   </div>
 
   <!-- Page Number -->
-  <div style="flex-shrink: 0; background: #8395A7; color: #fff; font-size: 11px; padding: 3px 10px; text-align: right;">1/1</div>
+  <div style="flex-shrink: 0; background: #8395A7; color: #fff; font-size: 11px; padding: 3px 10px; text-align: right;">
+  <p style="margin: 0;">1/1</p>
+  </div>
 
 </div>
 `;

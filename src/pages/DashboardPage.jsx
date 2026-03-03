@@ -54,6 +54,11 @@ const DashboardPage = ({ token, onLogout }) => {
     loadClients();
   }, [loadClients]);
 
+  const handleDelete = (id) => {
+    setClients((prev) => prev.filter((c) => (c._id || c.id) !== id));
+    showToast("تم حذف الطلب بنجاح", "success");
+  };
+
   const handleLogout = () => {
     onLogout();
     navigate("/login");
@@ -131,6 +136,7 @@ const DashboardPage = ({ token, onLogout }) => {
                 client={client}
                 index={i}
                 onEdit={setModal}
+                onDelete={handleDelete}
               />
             ))}
           </div>

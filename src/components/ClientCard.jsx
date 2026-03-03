@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { generateClientPDF } from "../utils/generatePDF";
+import { deleteClient } from "../api";
 import {
   CalendarIcon,
   MoneyIcon,
@@ -31,14 +32,15 @@ const STATUS_AR = {
   completed: { label: "مكتمل", cls: "status-completed" },
 };
 
-const ClientCard = ({ client, index, onEdit }) => {
+const ClientCard = ({ client, index, onEdit, onDelete }) => {
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const handlePDF = async () => {
     setPdfLoading(true);
     try {
-      // Build a compatible object for the PDF generator
-      const pdfData = {
+      await generateClientPDF({
         name: client.establishmentName || client.name,
         requestNumber: client.requestNumber,
         unifiedNumber: client.unifiedNumber,
@@ -47,12 +49,28 @@ const ClientCard = ({ client, index, onEdit }) => {
         date: client.createdAt || client.date,
         amount: client.amount,
         bodyText: client.bodyText,
-      };
-      await generateClientPDF(pdfData);
+      });
     } catch (err) {
       console.error("PDF error:", err);
     } finally {
       setPdfLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    setDeleteLoading(true);
+    try {
+      await deleteClient(client._id || client.id);
+      onDelete(client._id || client.id);
+    } catch (err) {
+      console.error("Delete error:", err);
+    } finally {
+      setDeleteLoading(false);
+      setConfirmDelete(false);
     }
   };
 
@@ -116,10 +134,95 @@ const ClientCard = ({ client, index, onEdit }) => {
             </>
           ) : (
             <>
-              <DownloadIcon /> تحميل PDF
+              <DownloadIcon /> PDF
             </>
           )}
         </button>
+
+        {/* Delete Button */}
+        {confirmDelete ? (
+          <div style={{ display: "flex", gap: 4, flex: 1 }}>
+            <button
+              onClick={handleDelete}
+              disabled={deleteLoading}
+              style={{
+                flex: 1,
+                padding: "8px 4px",
+                border: "none",
+                borderRadius: 8,
+                background: "#dc2626",
+                color: "#fff",
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: deleteLoading ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 4,
+              }}
+            >
+              {deleteLoading ? (
+                <>
+                  <LoaderIcon /> جارٍ...
+                </>
+              ) : (
+                "✓ تأكيد"
+              )}
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              style={{
+                flex: 1,
+                padding: "8px 4px",
+                border: "1px solid #d1d5db",
+                borderRadius: 8,
+                background: "#fff",
+                color: "#374151",
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              ✕ إلغاء
+            </button>
+          </div>
+        ) : (
+          <button
+            className="btn-delete"
+            onClick={handleDelete}
+            style={{
+              padding: "8px 14px",
+              border: "none",
+              borderRadius: 8,
+              background: "#fee2e2",
+              color: "#dc2626",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              transition: "background 0.2s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#fecaca")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#fee2e2")}
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+              <path d="M10 11v6M14 11v6" />
+              <path d="M9 6V4h6v2" />
+            </svg>
+            حذف
+          </button>
+        )}
       </div>
     </div>
   );
