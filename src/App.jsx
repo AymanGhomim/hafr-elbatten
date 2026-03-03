@@ -1,29 +1,54 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import LoginPage from './pages/LoginPage.jsx'
-import DashboardPage from './pages/DashboardPage.jsx'
-import VerifyPage from './pages/VerifyPage.jsx'
+import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import LoginPage    from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
 
-function PrivateRoute({ children }) {
-  const token = localStorage.getItem('admin_token')
-  return token ? children : <Navigate to="/login" replace />
-}
+const App = () => {
+  const [token, setToken] = useState(
+    () => localStorage.getItem('chamber_token') || null
+  );
 
-export default function App() {
+  const handleLoginSuccess = (newToken) => {
+    localStorage.setItem('chamber_token', newToken);
+    setToken(newToken);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('chamber_token');
+    setToken(null);
+  };
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/verify/:refNumber?" element={<VerifyPage />} />
+        {/* Public route */}
+        <Route
+          path="/login"
+          element={
+            token
+              ? <Navigate to="/dashboard" replace />
+              : <LoginPage onLoginSuccess={handleLoginSuccess} />
+          }
+        />
+
+        {/* Protected route */}
         <Route
           path="/dashboard"
           element={
-            <PrivateRoute>
-              <DashboardPage />
-            </PrivateRoute>
+            token
+              ? <DashboardPage token={token} onLogout={handleLogout} />
+              : <Navigate to="/login" replace />
           }
         />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+
+        {/* Default redirect */}
+        <Route
+          path="*"
+          element={<Navigate to={token ? '/dashboard' : '/login'} replace />}
+        />
       </Routes>
     </BrowserRouter>
-  )
-}
+  );
+};
+
+export default App;

@@ -1,20 +1,19 @@
-export default function StarIcon({ filled = false, size = 16, color }) {
-  const fill = filled ? (color || '#c9a84c') : 'none'
-  const stroke = color || (filled ? '#c9a84c' : '#5a5470')
-
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill={fill}
-      stroke={stroke}
-      strokeWidth="2"
-      strokeLinecap="round"
+const StarIcon = ({ size = 28 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    style={{ display: 'block', flexShrink: 0 }}
+  >
+    <path
+      d="M12 2L13.6 10.4L22 12L13.6 13.6L12 22L10.4 13.6L2 12L10.4 10.4Z"
+      fill="#4a7fd4"
+      stroke="#4a7fd4"
+      strokeWidth="0.3"
       strokeLinejoin="round"
-      style={{ flexShrink: 0 }}
-    >
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
-  )
-}
+    />
+  </svg>
+);
+
+export default StarIcon;
