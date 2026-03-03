@@ -58,5 +58,6 @@ export async function deleteClient(id) {
  * @returns {Promise<Object>}
  */
 export async function verifyRequest(refNumber) {
+  console.log("refNumber", refNumber);
   return api.get(`/api/user/verify/${encodeURIComponent(refNumber)}`);
 }

@@ -2,15 +2,25 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import QRCode from "qrcode";
 
-const buildQRData = (client) =>
-  [
+const buildQRData = (client) => {
+  const baseUrl =
+    import.meta.env.VITE_BASE_URL || "https://es.hafrchamber.org.sa";
+  const verifyUrl = `${baseUrl}/api/user/verify/${client?.refNumber}`;
+  return [
     `اسم المنشأة: ${client.name}`,
     `الرقم الموحد: ${client.unifiedNumber || ""}`,
     `السجل التجاري: ${client.crNumber || ""}`,
     `رقم الطلب: ${client.requestNumber || ""}`,
     `تاريخ الطلب: ${client.date}`,
-    `https://es.hafrchamber.org.sa/#/DocumentVerify`,
+    verifyUrl,
   ].join("\n");
+};
+
+const getVerifyUrl = (client) => {
+  const baseUrl =
+    import.meta.env.VITE_BASE_URL || "https://es.hafrchamber.org.sa";
+  return `${baseUrl}/api/user/verify/${client?.refNumber}`;
+};
 
 const fmtHijriDate = (d) => {
   try {
@@ -42,6 +52,8 @@ const fmtValidDate = (d) => {
 };
 
 export const generateClientPDF = async (client) => {
+  const verifyUrl = getVerifyUrl(client);
+
   const qrDataURL = await QRCode.toDataURL(buildQRData(client), {
     width: 120,
     margin: 1,
@@ -93,7 +105,7 @@ export const generateClientPDF = async (client) => {
     <!-- QR -->
     <div style="flex: 1.2; text-align: center; padding: 0 8px; box-sizing: border-box;">
       <img src="${qrDataURL}" width="95" height="95" style="display:block;margin:0 auto;" />
-      <div style="font-size: 10px; margin-top: 4px;">https://es.hafrchamber.org.sa/#/DocumentVerify</div>
+      <div style="font-size: 10px; margin-top: 4px;">${verifyUrl}</div>
       <div dir="rtl" style="font-size: 8.5px; margin-top: 6px; text-align: justify;">
         تم إصدار التصديق بناءً على طلب المشترك، دون أدنى مسؤولية على غرفة حفر الباطن عن محتوى الوثيقة، علماً أنه لا يعتد بالتصديق إلا بعد التحقق منه من خلال قراءة QR Code.
       </div>
