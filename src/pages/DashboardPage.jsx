@@ -1,22 +1,27 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { apiGetClients } from '../api/mockAPI';
-import StarIcon    from '../components/StarIcon';
-import Spinner     from '../components/Spinner';
-import Toast       from '../components/Toast';
-import ClientCard  from '../components/ClientCard';
-import ClientModal from '../components/ClientModal';
-import { LogoutIcon, PlusIcon, UsersIcon, ClipboardIcon } from '../components/Icons';
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { getClients } from "../api";
+import StarIcon from "../components/StarIcon";
+import Spinner from "../components/Spinner";
+import Toast from "../components/Toast";
+import ClientCard from "../components/ClientCard";
+import ClientModal from "../components/ClientModal";
+import {
+  LogoutIcon,
+  PlusIcon,
+  UsersIcon,
+  ClipboardIcon,
+} from "../components/Icons";
 
 const DashboardPage = ({ token, onLogout }) => {
   const navigate = useNavigate();
 
   const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modal,   setModal]   = useState(null);
-  const [toast,   setToast]   = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [modal, setModal] = useState(null);
+  const [toast, setToast] = useState(null);
 
-  const showToast = (message, type = 'success') => {
+  const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
@@ -24,29 +29,43 @@ const DashboardPage = ({ token, onLogout }) => {
   const loadClients = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiGetClients(token);
+      const res = await getClients();
+      console.log("clients response", res); // ← شوف الـ structure
+      const data = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.data)
+            ? res.data.data
+            : Array.isArray(res?.requests)
+              ? res.requests
+              : Array.isArray(res?.data?.requests)
+                ? res.data.requests
+                : [];
       setClients(data);
     } catch {
-      showToast('فشل تحميل البيانات', 'error');
+      showToast("فشل تحميل البيانات", "error");
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
-  useEffect(() => { loadClients(); }, [loadClients]);
+  useEffect(() => {
+    loadClients();
+  }, [loadClients]);
 
   const handleLogout = () => {
     onLogout();
-    navigate('/login');
+    navigate("/login");
   };
 
   const handleSave = async () => {
     const message =
-      modal && modal !== 'create'
-        ? 'تم تعديل البيانات بنجاح'
-        : 'تم إضافة العميل بنجاح';
+      modal && modal !== "create"
+        ? "تم تعديل البيانات بنجاح"
+        : "تم إضافة العميل بنجاح";
     setModal(null);
-    showToast(message, 'success');
+    showToast(message, "success");
     await loadClients();
   };
 
@@ -72,7 +91,6 @@ const DashboardPage = ({ token, onLogout }) => {
 
       {/* ─── Main Content ─── */}
       <div className="dash-content">
-
         {/* Toolbar */}
         <div className="dash-toolbar">
           <div className="toolbar-left">
@@ -83,13 +101,13 @@ const DashboardPage = ({ token, onLogout }) => {
               <div className="dash-title">قائمة العملاء</div>
               <div className="dash-sub">
                 {loading
-                  ? 'جارٍ التحميل...'
+                  ? "جارٍ التحميل..."
                   : `${clients.length} عميل مسجّل في النظام`}
               </div>
             </div>
           </div>
 
-          <button className="btn-create" onClick={() => setModal('create')}>
+          <button className="btn-create" onClick={() => setModal("create")}>
             <PlusIcon />
             إضافة عميل
           </button>
@@ -109,7 +127,7 @@ const DashboardPage = ({ token, onLogout }) => {
           <div className="cards-grid">
             {clients.map((client, i) => (
               <ClientCard
-                key={client.id}
+                key={client._id || client.id}
                 client={client}
                 index={i}
                 onEdit={setModal}
@@ -122,8 +140,7 @@ const DashboardPage = ({ token, onLogout }) => {
       {/* Modal */}
       {modal && (
         <ClientModal
-          client={modal === 'create' ? null : modal}
-          token={token}
+          client={modal === "create" ? null : modal}
           onClose={() => setModal(null)}
           onSave={handleSave}
         />

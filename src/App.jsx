@@ -1,50 +1,56 @@
-import { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import LoginPage    from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
+import { useState } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { getStoredToken, saveToken, logout } from "./api";
+import LoginPage from "./pages/LoginPage";
+import DashboardPage from "./pages/DashboardPage";
+import VerifyPage from "./pages/VerifyPage";
 
 const App = () => {
-  const [token, setToken] = useState(
-    () => localStorage.getItem('chamber_token') || null
-  );
+  const [token, setToken] = useState(() => getStoredToken());
 
   const handleLoginSuccess = (newToken) => {
-    localStorage.setItem('chamber_token', newToken);
+    saveToken(newToken);
     setToken(newToken);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('chamber_token');
+    logout();
     setToken(null);
   };
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public route */}
+        {/* Public routes */}
         <Route
           path="/login"
           element={
-            token
-              ? <Navigate to="/dashboard" replace />
-              : <LoginPage onLoginSuccess={handleLoginSuccess} />
+            token ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <LoginPage onLoginSuccess={handleLoginSuccess} />
+            )
           }
         />
+
+        <Route path="/verify/:refNumber?" element={<VerifyPage />} />
 
         {/* Protected route */}
         <Route
           path="/dashboard"
           element={
-            token
-              ? <DashboardPage token={token} onLogout={handleLogout} />
-              : <Navigate to="/login" replace />
+            token ? (
+              <DashboardPage token={token} onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
           }
         />
 
         {/* Default redirect */}
         <Route
           path="*"
-          element={<Navigate to={token ? '/dashboard' : '/login'} replace />}
+          element={<Navigate to={token ? "/dashboard" : "/login"} replace />}
         />
       </Routes>
     </BrowserRouter>
