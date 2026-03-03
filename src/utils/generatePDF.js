@@ -97,7 +97,7 @@ const generateQRWithLogo = async (client) => {
       // في حالة فشل تحميل اللوجو، نرجع QR عادي
       resolve(qrCanvas.toDataURL("image/png"));
     };
-    logo.src = "/src/imgs/Footer logo.jpeg";
+    logo.src = "/imgs/Footer logo.jpeg";
   });
 };
 
@@ -133,7 +133,7 @@ export const generateClientPDF = async (client) => {
   overflow: visible;
 ">
   <img 
-    src="/src/imgs/Header.jpg" 
+    src="/imgs/Header.jpg" 
     width="794" 
     style="display: block;" 
   />
@@ -215,7 +215,7 @@ export const generateClientPDF = async (client) => {
     box-sizing: border-box;
   ">
     <div style="flex: 0 0 100px; display:flex; align-items:center; justify-content:center; border-left: 1px solid #eee; padding-left: 10px;">
-      <img src="/src/imgs/Footer logo.jpeg" width="75" />
+      <img src="/imgs/Footer logo.jpeg" width="75" />
     </div>
 
     <div style="flex: 1; padding: 6px 10px; font-size: 8.5px; line-height: 1.6; text-align: right; direction: rtl;">
