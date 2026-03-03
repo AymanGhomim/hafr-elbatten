@@ -3,13 +3,31 @@ import { useParams } from "react-router-dom";
 import { verifyRequest } from "../api";
 import { generateClientPDF } from "../utils/generatePDF";
 
+// Hook مخصص للتجاوب
+const useMediaQuery = (query) => {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    if (media.matches !== matches) {
+      setMatches(media.matches);
+    }
+    const listener = () => setMatches(media.matches);
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
+  }, [matches, query]);
+
+  return matches;
+};
+
 const STATUS_AR = {
-  pending: { label: "قيد الانتظار", color: "#f59e0b", bg: "#fef3c7" },
-  approved: { label: "مقبول", color: "#16a34a", bg: "#dcfce7" },
-  rejected: { label: "مرفوض", color: "#dc2626", bg: "#fee2e2" },
-  inprogress: { label: "جارٍ التنفيذ", color: "#2563eb", bg: "#dbeafe" },
-  in_progress: { label: "جارٍ التنفيذ", color: "#2563eb", bg: "#dbeafe" },
-  completed: { label: "مكتمل", color: "#7c3aed", bg: "#ede9fe" },
+  pending: { label: "قيد الانتظار", color: "#f59e0b" },
+  approved: { label: "مقبول", color: "#16a34a" },
+  rejected: { label: "مرفوض", color: "#dc2626" },
+  inprogress: { label: "جارٍ التنفيذ", color: "#2563eb" },
+  in_progress: { label: "جارٍ التنفيذ", color: "#2563eb" },
+  completed: { label: "مكتمل", color: "#7c3aed" },
+  منتهى: { label: "منتهى", color: "#dc2626" },
 };
 
 const fmtDate = (d) => {
@@ -39,6 +57,9 @@ export default function VerifyPage() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [verified, setVerified] = useState(false);
+
+  const isMobile = useMediaQuery("(max-width: 480px)");
+  const isTablet = useMediaQuery("(min-width: 481px) and (max-width: 768px)");
 
   useEffect(() => {
     if (paramRef && !verified) {
@@ -89,10 +110,10 @@ export default function VerifyPage() {
 
   const statusKey = result?.status?.toLowerCase().replace(/\s/g, "");
   const statusInfo = statusKey
-    ? STATUS_AR[statusKey] || {
+    ? STATUS_AR[statusKey] ||
+      STATUS_AR[result?.status] || {
         label: result.status,
         color: "#6b7280",
-        bg: "#f3f4f6",
       }
     : null;
 
@@ -114,23 +135,97 @@ export default function VerifyPage() {
       ].filter((r) => r.value)
     : [];
 
-  /* ───────── shared styles ───────── */
+  const getContainerMaxWidth = () => {
+    if (isMobile) return "100%";
+    if (isTablet) return "90%";
+    return "900px";
+  };
+
+  const getFontSize = () => {
+    if (isMobile) return "12px";
+    if (isTablet) return "13px";
+    return "14px";
+  };
+
+  const getHeaderPadding = () => {
+    if (isMobile) return "12px 16px";
+    return "14px 20px";
+  };
+
   const cardHeader = {
-    background: "#517EC2",
-    padding: "14px 20px",
+    color: "#000000",
+    padding: getHeaderPadding(),
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
+    flexDirection: "row",
+    gap: "8px",
   };
 
   const backBtn = {
-    background: "rgba(255,255,255,0.2)",
+    background: "#517EC2",
     border: "none",
     borderRadius: 6,
     color: "#fff",
-    fontSize: 12,
-    padding: "4px 12px",
+    fontSize: isMobile ? "11px" : "12px",
+    padding: isMobile ? "6px 10px" : "8px 12px",
     cursor: "pointer",
+    transition: "all 0.2s ease",
+    whiteSpace: "nowrap",
+  };
+
+  const inputStyle = {
+    border: "1.5px solid #d1d5db",
+    borderRadius: 8,
+    padding: isMobile ? "12px 16px" : "10px 14px",
+    fontSize: getFontSize(),
+    outline: "none",
+    textAlign: "center",
+    letterSpacing: "0.05em",
+    width: "100%",
+    boxSizing: "border-box",
+    transition: "border-color 0.2s ease",
+  };
+
+  const buttonStyle = {
+    background: loading || !ref.trim() ? "#9db8e0" : "#517EC2",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    padding: isMobile ? "14px" : "11px",
+    fontSize: getFontSize(),
+    fontWeight: 600,
+    cursor: loading || !ref.trim() ? "not-allowed" : "pointer",
+    width: "100%",
+    transition: "all 0.2s ease",
+  };
+
+  // ── الستايلات الجديدة للصفوف ──
+  const rowStyle = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "8px 0",
+    borderBottom: "1px solid #e5e7eb",
+    gap: "8px",
+    flexDirection: "row", // دايماً أفقي
+    lineHeight: 1.5,
+  };
+
+  const labelStyle = {
+    fontSize: "13px",
+    color: "#1f2937", // داكن مثل الصورة
+    flexShrink: 0,
+    fontWeight: "700",
+  };
+
+  const valueStyle = {
+    fontSize: "13px",
+    fontWeight: 400,
+    color: "#1f2937",
+    textAlign: "left",
+    direction: "ltr",
+    wordBreak: "break-word",
   };
 
   return (
@@ -140,97 +235,68 @@ export default function VerifyPage() {
         background: "#f0f4f8",
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
         direction: "rtl",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
-      {/* ── Header ── */}
-      <header
-        style={{
-          background: "#517EC2",
-          padding: "12px 24px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          boxShadow: "0 2px 8px rgba(81,126,194,0.3)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: "6px",
-              padding: "4px 8px",
-              lineHeight: 1.1,
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: 8, color: "#517EC2", fontWeight: 700 }}>
-              رؤية
-            </div>
-            <div
-              style={{
-                fontSize: 16,
-                fontWeight: 900,
-                color: "#1a1a2e",
-                letterSpacing: "-1px",
-              }}
-            >
-              2030
-            </div>
-          </div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ color: "#fff", fontSize: 15, fontWeight: 600 }}>
-            بوابة خدمات الغرفة
-          </span>
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              background: "rgba(255,255,255,0.15)",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "1.5px solid rgba(255,255,255,0.4)",
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"
-                fill="#fff"
-                opacity="0.9"
-              />
-            </svg>
-          </div>
-        </div>
+      {/* ── Header Image ── */}
+      <header style={{ width: "100%", overflow: "hidden", flexShrink: 0 }}>
+        <img
+          src="/src/imgs/vheader.jpeg"
+          alt="Header"
+          style={{
+            width: "100%",
+            height: "auto",
+            maxHeight: isMobile ? "120px" : "auto",
+            objectFit: "cover",
+            display: "block",
+          }}
+        />
       </header>
 
       {/* ── Body ── */}
-      <div style={{ maxWidth: 600, margin: "32px auto", padding: "0 16px" }}>
+      <div
+        style={{
+          maxWidth: getContainerMaxWidth(),
+          width: "100%",
+          margin: isMobile ? "16px auto" : "32px auto",
+          padding: isMobile ? "0 12px" : "0 16px",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         {!result ? (
           /* ── Search Card ── */
           <div
             style={{
               background: "#fff",
-              borderRadius: 12,
+              borderRadius: isMobile ? 8 : 12,
               boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
               overflow: "hidden",
+              flex: 1,
             }}
           >
             <div style={cardHeader}>
-              <span style={{ color: "#fff", fontWeight: 600, fontSize: 14 }}>
+              <span
+                style={{
+                  fontWeight: 600,
+                  fontSize: isMobile ? "13px" : "14px",
+                }}
+              >
                 التحقق من الوثائق
               </span>
               <button onClick={() => window.history.back()} style={backBtn}>
                 العودة
               </button>
             </div>
-            <div style={{ padding: "28px 24px" }}>
+            <div style={{ height: "1px", background: "#e5e7eb" }}></div>
+            <div style={{ padding: isMobile ? "20px 16px" : "28px 24px" }}>
               <p
                 style={{
-                  fontSize: 13,
+                  fontSize: isMobile ? "12px" : "13px",
                   color: "#555",
-                  marginBottom: 24,
+                  marginBottom: isMobile ? "16px" : "24px",
                   lineHeight: 1.7,
                   textAlign: "center",
                 }}
@@ -241,7 +307,11 @@ export default function VerifyPage() {
               </p>
               <form
                 onSubmit={handleVerify}
-                style={{ display: "flex", flexDirection: "column", gap: 12 }}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: isMobile ? "10px" : "12px",
+                }}
               >
                 <input
                   value={ref}
@@ -251,15 +321,7 @@ export default function VerifyPage() {
                   }}
                   placeholder="أدخل الرقم المرجعي..."
                   dir="ltr"
-                  style={{
-                    border: "1.5px solid #d1d5db",
-                    borderRadius: 8,
-                    padding: "10px 14px",
-                    fontSize: 14,
-                    outline: "none",
-                    textAlign: "center",
-                    letterSpacing: "0.05em",
-                  }}
+                  style={inputStyle}
                   onFocus={(e) => (e.target.style.borderColor = "#517EC2")}
                   onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
                 />
@@ -268,9 +330,9 @@ export default function VerifyPage() {
                     style={{
                       background: "#fee2e2",
                       borderRadius: 8,
-                      padding: "10px 14px",
+                      padding: isMobile ? "8px 12px" : "10px 14px",
                       color: "#dc2626",
-                      fontSize: 13,
+                      fontSize: isMobile ? "11px" : "13px",
                       textAlign: "center",
                     }}
                   >
@@ -280,16 +342,7 @@ export default function VerifyPage() {
                 <button
                   type="submit"
                   disabled={loading || !ref.trim()}
-                  style={{
-                    background: loading || !ref.trim() ? "#9db8e0" : "#517EC2",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: 8,
-                    padding: "11px",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: loading || !ref.trim() ? "not-allowed" : "pointer",
-                  }}
+                  style={buttonStyle}
                 >
                   {loading ? "جارٍ البحث..." : "تحقق"}
                 </button>
@@ -301,13 +354,18 @@ export default function VerifyPage() {
           <div
             style={{
               background: "#fff",
-              borderRadius: 12,
+              borderRadius: isMobile ? 8 : 12,
               boxShadow: "0 2px 16px rgba(0,0,0,0.08)",
               overflow: "hidden",
             }}
           >
             <div style={cardHeader}>
-              <span style={{ color: "#fff", fontWeight: 600, fontSize: 14 }}>
+              <span
+                style={{
+                  fontWeight: 600,
+                  fontSize: isMobile ? "13px" : "14px",
+                }}
+              >
                 التحقق من الوثائق
               </span>
               <button onClick={() => window.history.back()} style={backBtn}>
@@ -315,61 +373,53 @@ export default function VerifyPage() {
               </button>
             </div>
 
-            <div style={{ padding: "20px 24px" }}>
+            <div style={{ height: "1px", background: "#e5e7eb" }}></div>
+
+            <div
+              style={{ padding: isMobile ? "12px 16px 4px" : "16px 24px 4px" }}
+            >
+              <p
+                style={{
+                  fontSize: isMobile ? "11px" : "12px",
+                  color: "#555",
+                  lineHeight: 1.7,
+                  textAlign: "center",
+                  margin: 0,
+                }}
+              >
+                خدمة تتيح التحقق من الوثائق التي تم تصديقها إلكترونياً عبر بوابة
+                خدمات المشتركين. وللتحقق من شهادة الاشتراك الرجاء ادخال الرقم
+                المرجعي الخاص بالوثيقة
+              </p>
+            </div>
+
+            <div style={{ padding: isMobile ? "12px 16px" : "12px 24px 20px" }}>
               {/* Rows */}
               {rows.map((row, i) => (
                 <div
                   key={i}
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "10px 0",
+                    ...rowStyle,
                     borderBottom:
-                      i < rows.length - 1 ? "1px solid #f3f4f6" : "none",
-                    gap: 12,
+                      i < rows.length - 1
+                        ? "1px solid #e5e7eb"
+                        : "1px solid #e5e7eb",
                   }}
                 >
-                  <span
-                    style={{ fontSize: 13, color: "#6b7280", flexShrink: 0 }}
-                  >
-                    {row.label}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: "#1f2937",
-                      textAlign: "left",
-                      direction: "ltr",
-                    }}
-                  >
-                    {row.value}
-                  </span>
+                  <span style={labelStyle}>{row.label}</span>
+                  <span style={valueStyle}>{row.value}</span>
                 </div>
               ))}
 
-              {/* Status Row */}
+              {/* Status Row — نص ملوّن بدون badge */}
               {statusInfo && (
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "10px 0",
-                  }}
-                >
-                  <span style={{ fontSize: 13, color: "#6b7280" }}>
-                    حالة الطلب
-                  </span>
+                <div style={{ ...rowStyle, borderBottom: "none" }}>
+                  <span style={labelStyle}>حالة الطلب</span>
                   <span
                     style={{
-                      fontSize: 12,
+                      fontSize: "13px",
                       fontWeight: 700,
                       color: statusInfo.color,
-                      background: statusInfo.bg,
-                      padding: "3px 12px",
-                      borderRadius: 20,
                     }}
                   >
                     {statusInfo.label}
@@ -378,7 +428,14 @@ export default function VerifyPage() {
               )}
 
               {/* Buttons */}
-              <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: isMobile ? "8px" : "10px",
+                  marginTop: isMobile ? "16px" : "20px",
+                  flexDirection: isMobile ? "column" : "row",
+                }}
+              >
                 {/* Download PDF */}
                 <button
                   onClick={handleDownloadPDF}
@@ -389,14 +446,15 @@ export default function VerifyPage() {
                     color: "#fff",
                     border: "none",
                     borderRadius: 8,
-                    padding: "11px",
-                    fontSize: 14,
+                    padding: isMobile ? "12px" : "11px",
+                    fontSize: getFontSize(),
                     fontWeight: 600,
                     cursor: pdfLoading ? "not-allowed" : "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 8,
+                    transition: "all 0.2s ease",
                   }}
                 >
                   {pdfLoading ? (
@@ -404,8 +462,8 @@ export default function VerifyPage() {
                   ) : (
                     <>
                       <svg
-                        width="16"
-                        height="16"
+                        width={isMobile ? 14 : 16}
+                        height={isMobile ? 14 : 16}
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -423,8 +481,9 @@ export default function VerifyPage() {
                 {/* Verify Again */}
                 <button
                   onClick={() => {
-                    window.location.href =
-                      "https://es.hafrchamber.org.sa/#/DocumentVerify";
+                    setResult(null);
+                    setRef("");
+                    setError("");
                   }}
                   style={{
                     flex: 1,
@@ -432,10 +491,11 @@ export default function VerifyPage() {
                     color: "#fff",
                     border: "none",
                     borderRadius: 8,
-                    padding: "11px",
-                    fontSize: 14,
+                    padding: isMobile ? "12px" : "11px",
+                    fontSize: getFontSize(),
                     fontWeight: 600,
                     cursor: "pointer",
+                    transition: "all 0.2s ease",
                   }}
                 >
                   التحقق مرة أخرى
@@ -445,51 +505,23 @@ export default function VerifyPage() {
           </div>
         )}
 
-        {/* ── Footer ── */}
-        <div
-          style={{
-            marginTop: 32,
-            background: "#517EC2",
-            borderRadius: 10,
-            padding: "16px 20px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div style={{ textAlign: "right" }}>
-            <div style={{ color: "#fff", fontSize: 12, fontWeight: 600 }}>
-              تطوير وتشغيل
-            </div>
-            <div style={{ color: "rgba(255,255,255,0.8)", fontSize: 11 }}>
-              عالم الأنظمة والبرامج
-            </div>
-            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }}>
-              World of Systems & Software
-            </div>
-          </div>
-          <div
-            style={{
-              width: 42,
-              height: 42,
-              background: "rgba(255,255,255,0.15)",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              border: "1.5px solid rgba(255,255,255,0.3)",
-            }}
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"
-                fill="#fff"
-                opacity="0.9"
-              />
-            </svg>
-          </div>
-        </div>
+        <div style={{ flex: 1, minHeight: isMobile ? "16px" : "32px" }}></div>
       </div>
+
+      {/* ── Footer Image ── */}
+      <footer style={{ width: "100%", height:"50px", flexShrink: 0, marginTop: "auto" }}>
+        <img
+          src="/src/imgs/vfooter.jpg"
+          alt="Footer"
+          style={{
+            width: "100%",
+            height: "auto",
+            display: "block",
+            maxHeight: isMobile ? "100px" : "auto",
+            objectFit: "cover",
+          }}
+        />
+      </footer>
     </div>
   );
 }

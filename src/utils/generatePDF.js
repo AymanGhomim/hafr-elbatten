@@ -77,7 +77,7 @@ export const generateClientPDF = async (client) => {
 ">
 
   <!-- Header Image -->
-  <div style="flex-shrink: 0;">
+  <div style="flex-shrink: 0; margin-bottom: 20px; z-index: 4;">
     <img src="/src/imgs/Header.jpg" width="794" style="display:block;" />
   </div>
 
